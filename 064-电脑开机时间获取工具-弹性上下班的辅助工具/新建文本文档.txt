@@ -1,0 +1,59 @@
+	之前，我所在的公司对于开发人员，上班时间是弹性的，早上可以是8点到9点之间指纹打开，然后下午5点半到六点半之间可以下班，如果你早上8点打开，那么下午5点半就可以下班，但是我们不可能每天下班都记得自己什么时候早上打的卡，所以，如果有那么一款工具，能大致知道自己什么时候打的卡，那么就不用这么麻烦了，后来我想了想，何不以电脑的开机时间为参考，因为我们上班族基本上早上一来公司就开电脑，所以电脑开机时间基本上和打卡时间差不多，除非你会公司后不用电脑或者恨晚才打开电脑。
+	那么说说，这款简单的小工具的原理，其实很简单，就是读取操作系统的系统日志，帅选处当天最早的开机时间，当然如果你昨晚加班到一两点，那么可能就不准确了，不过后来想想，能不能对程序的逻辑进行一下判断，假如我们公司是8点开始上班，那么如果发现系统日志有1点到7点的系统日志，那么能不能单查看7点到9点的日志。后来又想了想，能不能单单选择开机的时间，如果发现有多个开机时间，那么就列出来，让用户自己来判断。这样就完美了。
+
+01-需求分析和搭建项目和创建Winform界面
+	搭建一个桌面的界面，然后想把这个程序的主题UI层搭建出来，那么我们其实可以直接使用.NET 2.0，这样就可以让多数电脑用的，不知道win10是不是默认安装了.NET 2.0如果是那么我们这个程序就可以直接发给win10的用户直接使用了。
+	搭建项目解决方案
+	修改小图标和程序图标
+this.labelOpenTime.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+
+02-读取系统日志来判断什么时候开机
+	读取系统日志，我们之前在讲这个winform的时候，有讲过，所以我们直接到北盟网校上面去查找一下相关资料。如果要查看系统日志的话，那么就需要引入命名空间：using System.Diagnostics;
+        private void FormMain_Load(object sender, EventArgs e)
+        {
+            EventLog eventLog = new EventLog();
+            eventLog.Log = "System";//日志的类型 有应用程序 系统 等等
+            EventLogEntryCollection eventLogEntryCollection = eventLog.Entries;//获取事件日志的内容
+            foreach (EventLogEntry item in eventLogEntryCollection)
+            {
+                if (item.TimeGenerated > new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 6, 0, 0))
+                {
+                    this.labelOpenTime.Text = item.TimeGenerated.ToString("yyyy-MM-dd HH:mm");
+                    break;
+                }
+            }
+        }
+
+03-给程序的底部加入版权信息和和超链接
+	在界面的底部添加一个statustrip控件，然后加入我们的版权，给它一个超链接的跳转到我们网站上面，然后添加一个超链接
+	去掉超链接的这个下划线，同时，设置界面不让其拖动变大。
+	在Form类下面有一个FormBorderStyle的字段，我们可以通过设置它的值来让窗体不能被拉大拉小。FormBorderStyle的值设置为FormBorderStyle.FixedSingle或Fixed3D时，窗体大小是不能被改变的。
+	给这个statustrip添加一个点击事件，然后再事件里面添加一个跳转到网页打代码。
+        private void toolStripStatusLabel1_Click(object sender, EventArgs e)
+        {
+            System.Diagnostics.Process.Start("explorer.exe", "http://www.bamn.cn");
+        }
+
+04-尝试优化一下这个开机时间的获取
+	我们到MSDN上面来看一下这个Eventlog这个类的用法，按F1可以跳转到MSDN。发布软件应该选择relase模式，不用debug模式。
+	发现打开速度还是有点慢，但是之所以慢是因为有五万多条日志，要不断去判断时间，所以才会慢，我们看一下能否根据时间来选择。
+	我们发现通过catalognumber=5都是性能没多大作用，不过想了想能不能倒叙，倒叙的话就可以从今天最早的日志开始。这样就性能好很多了。编程的时候一定要大胆假设，而且要多点去判断，比如用到了下标的话就要想会不会溢出的问题。
+ private void FormMain_Load(object sender, EventArgs e)
+        {
+            EventLog eventLog = new EventLog();
+            eventLog.Log = "System";//日志的类型 有应用程序 系统 等等
+            EventLogEntryCollection eventLogEntryCollection = eventLog.Entries;//获取事件日志的内容
+            for (int i = eventLogEntryCollection.Count-1; i >= 0; i--)
+            {
+                if (eventLogEntryCollection[i].TimeGenerated < new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 6, 0, 0))
+                {
+                    int index = i;
+                    if (eventLogEntryCollection[i + 1]!=null)
+                    {
+                        index = i + 1;
+                    }
+                    this.labelOpenTime.Text = eventLogEntryCollection[index].TimeGenerated.ToString("yyyy-MM-dd HH:mm");
+                    break;
+                }
+            }
+        }
