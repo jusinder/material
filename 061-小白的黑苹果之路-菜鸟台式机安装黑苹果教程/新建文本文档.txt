@@ -1,0 +1,77 @@
+macOS Sierra 10.12.5 16F73 with Clover 4076
+这个下载下来，我们这一节就要准备制作U盘启动了
+好像需要一个更大的U盘，我这里就选择一个32GB的U盘了
+估计好像也不是U盘大小的问题，应该猜测是这个dmg格式是需要RAW的写入方式
+使用的制作工具是ULTRAISO这个，写入的时候，写入方式是RAW
+如果使用USBHDD会报磁盘不足的问题
+
+刚才制作mac的U盘的时候，导致U盘只有200m的使用空间
+下面是如何恢复呢
+
+    打开命令行窗口
+    敲入diskpart回车
+    先用list disk查看全部磁盘，记下U盘所在的磁盘的编号。如下图所示，我的8G U盘编号是3。
+    敲入select disk x，回车。其中x就是在上面步骤获得的磁盘编号
+    敲入clean回车
+C:\Users\M>diskpart
+
+DISKPART> list disk
+
+  磁盘 ###  状态           大小     可用     Dyn  Gpt
+  --------  -------------  -------  -------  ---  ---
+  磁盘 0    联机              232 GB   906 MB
+  磁盘 1    联机              465 GB      0 B        *
+  磁盘 2    联机             7800 MB      0 B
+  磁盘 3    联机               28 GB    28 GB        *
+
+DISKPART> select disk 3
+
+磁盘 3 现在是所选磁盘。
+
+DISKPART> clean
+
+DiskPart 成功地清除了磁盘。
+
+DISKPART>
+
+
+在安装的过程中，我们选择了U盘启动后，就可以进入到U盘的引导了，然后系统会读取U盘的信息，然后就出现下面的界面
+但是选择后，我们发现我们的磁盘不能选择，后来找了写办法，终于把问题解决了，就是要使用菜单栏的Utilites磁盘工具
+然后选择整个硬盘 抹掉它
+具体情况，大家可以看视频，视频分了几个，如果看不清可以最大化。
+
+
+大家先挂载u盘的EFI目录
+然后修改这个plist文件
+spider  12:07:13
+f
+forever  12:07:53
+Last login: Sat Aug 12 11:30:54 on console
+ms-iMac:~ m$ diskutil list
+/dev/disk0 (internal, physical):
+   #:                       TYPE NAME                    SIZE       IDENTIFIER
+   0:      GUID_partition_scheme                        *240.1 GB   disk0
+   1:                        EFI EFI                     209.7 MB   disk0s1
+   2:                  Apple_HFS Untitled                239.2 GB   disk0s2
+   3:                 Apple_Boot Recovery HD             650.0 MB   disk0s3
+
+/dev/disk1 (internal, physical):
+   #:                       TYPE NAME                    SIZE       IDENTIFIER
+   0:     FDisk_partition_scheme                        *250.1 GB   disk1
+   1:               Windows_NTFS 系统保留                104.9 MB   disk1s1
+   2:               Windows_NTFS                         106.9 GB   disk1s2
+   3:                       0x27                         475.0 MB   disk1s3
+   4:               Windows_NTFS                         142.6 GB   disk1s4
+
+/dev/disk2 (external, physical):
+   #:                       TYPE NAME                    SIZE       IDENTIFIER
+   0:      GUID_partition_scheme                        *8.2 GB     disk2
+   1:                        EFI EFI                     209.7 MB   disk2s1
+   2:                  Apple_HFS macOS Sierra 16F73 I... 5.2 GB     disk2s2
+
+ms-iMac:~ m$ diskutil mount disk2s1
+Volume EFI on disk2s1 mounted
+configHD4600 HD4400 HD4200.plist
+
+
+黑苹果  声卡驱动 ALC887
